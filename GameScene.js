@@ -561,18 +561,25 @@ class GameScene extends Phaser.Scene {
         // Create confetti particles
         this.createConfetti(width, height);
         
-        // Random congratulatory message
-        const randomMessage = Phaser.Utils.Array.GetRandom(this.congratsMessages);
+        // Special handling for level 1 - show tutorial popup
+        if (this.currentLevelIndex === 0) {
+            this.showLevel1TutorialPopup();
+            return; // Skip normal completion flow
+        }
+        
+        // Random congratulatory message for other levels
+        const message = Phaser.Utils.Array.GetRandom(this.congratsMessages);
         
         // Get position below cells
         const cellsY = this.inputCells[0].cell.y;
         const messageY = cellsY + 100;
         
-        const congratsText = this.add.text(width / 2, messageY, randomMessage, {
+        const congratsText = this.add.text(width / 2, messageY, message, {
             fontFamily: 'Arial, sans-serif',
             fontSize: '42px',
             color: '#4CAF50',
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            align: 'center'
         }).setOrigin(0.5).setAlpha(0);
         
         // Fade in animation
@@ -663,5 +670,60 @@ class GameScene extends Phaser.Scene {
     restartLevel() {
         // Restart current level
         this.scene.restart({ levelIndex: this.currentLevelIndex });
+    }
+
+    showLevel1TutorialPopup() {
+        const { width, height } = this.sys.game.canvas;
+        
+        // Semi-transparent overlay
+        const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7);
+        overlay.setOrigin(0, 0);
+        
+        // Popup panel
+        const panelWidth = width * 0.85;
+        const panelHeight = 320;
+        const panel = this.add.rectangle(width / 2, height / 2, panelWidth, panelHeight, 0xffffff);
+        panel.setStrokeStyle(4, 0x4a90e2);
+        
+        // Tutorial message
+        const message = 'That was easy.\n\nThe keyboard now follows\na hidden pattern.\n\nFind it to win.';
+        const messageText = this.add.text(width / 2, height / 2 - 40, message, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '24px',
+            color: '#333333',
+            fontStyle: 'bold',
+            align: 'center',
+            lineSpacing: 8
+        }).setOrigin(0.5);
+        
+        // "Got it" button
+        const buttonWidth = 150;
+        const buttonHeight = 55;
+        const buttonY = height / 2 + 90;
+        
+        const button = this.add.rectangle(width / 2, buttonY, buttonWidth, buttonHeight, 0x4CAF50);
+        button.setStrokeStyle(3, 0x388E3C);
+        button.setInteractive({ useHandCursor: true });
+        
+        const buttonText = this.add.text(width / 2, buttonY, 'Got it!', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '24px',
+            color: '#FFFFFF',
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+        
+        // Button hover effect
+        button.on('pointerover', () => {
+            button.setFillStyle(0x66BB6A);
+        });
+        button.on('pointerout', () => {
+            button.setFillStyle(0x4CAF50);
+        });
+        
+        // Button click - save progress and go to level 2
+        button.on('pointerdown', () => {
+            this.saveLevelProgress(1); // Save progress to level 2
+            this.scene.start('GameScene', { levelIndex: 1 });
+        });
     }
 }
