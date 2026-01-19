@@ -21,6 +21,11 @@ class GameScene extends Phaser.Scene {
         // Load backspace image
         this.load.svg('backspace', 'graphics/backspace.svg', { scale: 1 });
         
+        // Load sound effects
+        this.load.audio('click', 'sounds/click.wav');
+        this.load.audio('success', 'sounds/success.wav');
+        this.load.audio('invalid', 'sounds/invalid.ogg');
+        
         // Load all icon images as PNG from graphics/ folder
         const iconNames = ['ladder', 'penguin', 'clock', 'octopus', 'kite', 'carrot', 
                           'icecream', 'cactus', 'violin', 'socks', 'umbrella', 
@@ -55,11 +60,15 @@ class GameScene extends Phaser.Scene {
         // Initialize keyboard logic for this level
         this.keyboardLogic = KeyboardLogicFactory.create(this.currentLevel.logic, this);
         
-        // Calculate layout
-        const headerHeight = height * (CONFIG.HEADER_HEIGHT_PERCENT / 100);
-        const inputHeight = height * (CONFIG.INPUT_CELLS_HEIGHT_PERCENT / 100);
-        const instructionHeight = height * (CONFIG.INSTRUCTION_HEIGHT_PERCENT / 100);
-        const keyboardHeight = height * (CONFIG.KEYBOARD_HEIGHT_PERCENT / 100);
+        // Congratulatory messages array
+        this.congratsMessages = ['Perfect!', 'Great!', 'Nice!', 'Master!', 'Excellent!', 'Nailed it!'];
+        
+        // Calculate layout - keyboard positioned lower like Wordle
+        const headerHeight = height * 0.08;
+        const typePokiHeight = height * 0.05;
+        const inputHeight = height * 0.12;
+        const spacingHeight = height * 0.20; // Space between input and keyboard
+        const keyboardHeight = height * 0.40;
         
         let currentY = 0;
         
@@ -67,24 +76,38 @@ class GameScene extends Phaser.Scene {
         this.createHeader(width, headerHeight, currentY);
         currentY += headerHeight;
         
+        // Add "Type POKI" text
+        this.createTypePokiText(width, typePokiHeight, currentY);
+        currentY += typePokiHeight;
+        
         this.createInputCells(width, inputHeight, currentY);
-        currentY += inputHeight;
+        currentY += inputHeight + spacingHeight;
         
-        this.createInstruction(width, instructionHeight, currentY);
-        currentY += instructionHeight;
-        
+        // Position keyboard lower on screen
         this.createKeyboard(width, keyboardHeight, currentY);
         
-        // Add restart button
-        this.createRestartButton(width, height);
+        // Add restart button above keyboard on right
+        this.createRestartButton(width, currentY);
     }
 
     createHeader(width, height, yPos) {
+        // Simplified level name - just "Level X"
+        const levelNumber = this.currentLevelIndex + 1;
         const headerText = this.add.text(width / 2, yPos + height / 2, 
-            this.currentLevel.name, {
+            `Level ${levelNumber}`, {
             fontFamily: 'Arial, sans-serif',
             fontSize: CONFIG.HEADER_FONT_SIZE,
             color: CONFIG.PRIMARY_COLOR,
+            fontStyle: 'bold'
+        }).setOrigin(0.5);
+    }
+
+    createTypePokiText(width, height, yPos) {
+        this.add.text(width / 2, yPos + height / 2, 
+            'Type POKI', {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '20px',
+            color: CONFIG.KEY_TEXT_COLOR,
             fontStyle: 'bold'
         }).setOrigin(0.5);
     }
@@ -113,30 +136,11 @@ class GameScene extends Phaser.Scene {
                 fontStyle: 'bold'
             }).setOrigin(0.5);
             
-            this.inputCells.push({ cell, text });
+            this.inputCells.push({ cell, text, defaultColor: CONFIG.CELL_COLOR });
         }
-    }
-
-    createInstruction(width, height, yPos) {
-        const instructionText = this.add.text(width / 2, yPos + height / 2, 
-            this.currentLevel.instruction, {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: CONFIG.INSTRUCTION_FONT_SIZE,
-            color: CONFIG.KEY_TEXT_COLOR,
-            align: 'center',
-            wordWrap: { width: width * 0.9 }
-        }).setOrigin(0.5);
         
-        // Show hint if enabled in config
-        if (CONFIG.SHOW_LEVEL_HINTS && this.currentLevel.hint) {
-            this.add.text(width / 2, yPos + height - 5, 
-                `Hint: ${this.currentLevel.hint}`, {
-                fontFamily: 'Arial, sans-serif',
-                fontSize: '14px',
-                color: '#888888',
-                align: 'center'
-            }).setOrigin(0.5, 1);
-        }
+        // Highlight first cell
+        this.highlightNextCell();
     }
 
     createKeyboard(width, height, yPos) {
@@ -287,9 +291,10 @@ class GameScene extends Phaser.Scene {
         bg.setOrigin(0, 0);
         bg.setInteractive({ useHandCursor: true });
         
-        // Backspace icon
+        // Backspace icon - maintain aspect ratio
         const icon = this.add.image(x + width / 2, y + height / 2, 'backspace');
-        icon.setDisplaySize(width * 0.6, height * 0.6);
+        const scale = Math.min((width * 0.6) / icon.width, (height * 0.6) / icon.height);
+        icon.setScale(scale);
         
         // Click handler
         bg.on('pointerdown', () => this.handleBackspace());
@@ -305,21 +310,20 @@ class GameScene extends Phaser.Scene {
         return { bg, icon, letter: 'BACKSPACE' };
     }
 
-    createRestartButton(width, height) {
-        const btnWidth = 100;
-        const btnHeight = 45;
-        const x = width - btnWidth - 20;
-        const y = height - btnHeight - 20;
+    createRestartButton(width, keyboardYPos) {
+        const btnSize = 50; // Square button
+        const x = width - btnSize - 20;
+        const y = keyboardYPos - btnSize - 15; // Above keyboard
         
-        const bg = this.add.rectangle(x, y, btnWidth, btnHeight, 
+        const bg = this.add.rectangle(x, y, btnSize, btnSize, 
             Phaser.Display.Color.HexStringToColor('#FF6B6B').color);
         bg.setStrokeStyle(2, 0x333333);
         bg.setOrigin(0, 0);
         bg.setInteractive({ useHandCursor: true });
         
-        const text = this.add.text(x + btnWidth / 2, y + btnHeight / 2, '↻ RESTART', {
+        const text = this.add.text(x + btnSize / 2, y + btnSize / 2, '↻', {
             fontFamily: 'Arial, sans-serif',
-            fontSize: '16px',
+            fontSize: '28px',
             color: '#FFFFFF',
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -339,6 +343,9 @@ class GameScene extends Phaser.Scene {
         if (this.currentInput.length >= this.targetWord.length) {
             return;
         }
+        
+        // Play click sound
+        this.sound.play('click', { volume: 0.5 });
         
         // Get keyboard logic response
         const result = this.keyboardLogic.handleKeyPress(key, this.currentInput);
@@ -388,6 +395,22 @@ class GameScene extends Phaser.Scene {
         // Clear remaining cells
         for (let i = this.currentInput.length; i < this.inputCells.length; i++) {
             this.inputCells[i].text.setText('');
+        }
+        
+        // Highlight next cell
+        this.highlightNextCell();
+    }
+
+    highlightNextCell() {
+        // Reset all cells to default color
+        this.inputCells.forEach(cellObj => {
+            cellObj.cell.setFillStyle(Phaser.Display.Color.HexStringToColor(cellObj.defaultColor).color);
+        });
+        
+        // Highlight next empty cell in yellow
+        const nextIndex = this.currentInput.length;
+        if (nextIndex < this.inputCells.length) {
+            this.inputCells[nextIndex].cell.setFillStyle(0xFFEB3B); // Yellow
         }
     }
 
@@ -461,21 +484,28 @@ class GameScene extends Phaser.Scene {
         const playerWord = this.currentInput.join('');
         
         if (playerWord === this.targetWord) {
-            // Correct! Save progress and go to win scene
-            const nextLevel = this.currentLevelIndex + 1;
-            if (nextLevel < this.allLevels.length) {
-                // Save progress only if there are more levels
-                this.saveLevelProgress(nextLevel);
-            }
+            // Correct! Play success sound
+            this.sound.play('success', { volume: 0.7 });
             
-            this.time.delayedCall(300, () => {
-                this.scene.start('WinScene', {
-                    currentLevelIndex: this.currentLevelIndex,
-                    totalLevels: this.allLevels.length
+            // Sequential rotation animation for letters
+            this.playLetterRotationAnimation(() => {
+                // After rotation, show confetti and congratulations
+                this.showCongratsAndConfetti(() => {
+                    // Save progress and go to win scene
+                    const nextLevel = this.currentLevelIndex + 1;
+                    if (nextLevel < this.allLevels.length) {
+                        this.saveLevelProgress(nextLevel);
+                    }
+                    
+                    this.scene.start('WinScene', {
+                        currentLevelIndex: this.currentLevelIndex,
+                        totalLevels: this.allLevels.length
+                    });
                 });
             });
         } else {
-            // Wrong - shake the cells
+            // Wrong - play invalid sound and shake cells
+            this.sound.play('invalid', { volume: 0.5 });
             this.shakeCells();
             
             // Clear after delay
@@ -485,6 +515,86 @@ class GameScene extends Phaser.Scene {
                 this.keyboardLogic.reset();
                 this.updateKeyboardVisibility();
                 this.updateAllKeys();
+            });
+        }
+    }
+
+    playLetterRotationAnimation(onComplete) {
+        let delay = 0;
+        const rotationDelay = 150;
+        
+        this.inputCells.forEach((cellObj, index) => {
+            this.time.delayedCall(delay, () => {
+                this.tweens.add({
+                    targets: [cellObj.cell, cellObj.text],
+                    scaleX: 0,
+                    duration: 150,
+                    ease: 'Power2',
+                    yoyo: true,
+                    onYoyo: () => {
+                        // Flip happens at middle of animation
+                    }
+                });
+            });
+            delay += rotationDelay;
+        });
+        
+        // Call onComplete after all animations
+        this.time.delayedCall(delay + 300, onComplete);
+    }
+
+    showCongratsAndConfetti(onComplete) {
+        const { width, height } = this.sys.game.canvas;
+        
+        // Create confetti particles
+        this.createConfetti(width, height);
+        
+        // Random congratulatory message
+        const randomMessage = Phaser.Utils.Array.GetRandom(this.congratsMessages);
+        
+        // Get position below cells
+        const cellsY = this.inputCells[0].cell.y;
+        const messageY = cellsY + 100;
+        
+        const congratsText = this.add.text(width / 2, messageY, randomMessage, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '42px',
+            color: '#4CAF50',
+            fontStyle: 'bold'
+        }).setOrigin(0.5).setAlpha(0);
+        
+        // Fade in animation
+        this.tweens.add({
+            targets: congratsText,
+            alpha: 1,
+            duration: 400,
+            ease: 'Power2'
+        });
+        
+        // Wait before showing win screen
+        this.time.delayedCall(1500, onComplete);
+    }
+
+    createConfetti(width, height) {
+        const colors = [0xFF5252, 0xFFEB3B, 0x4CAF50, 0x2196F3, 0x9C27B0, 0xFF9800];
+        const confettiCount = 50;
+        
+        for (let i = 0; i < confettiCount; i++) {
+            const x = Phaser.Math.Between(0, width);
+            const y = Phaser.Math.Between(-50, height / 2);
+            const color = Phaser.Utils.Array.GetRandom(colors);
+            
+            const confetti = this.add.rectangle(x, y, 10, 10, color);
+            
+            this.tweens.add({
+                targets: confetti,
+                y: height + 50,
+                x: x + Phaser.Math.Between(-100, 100),
+                rotation: Phaser.Math.Between(0, 360),
+                alpha: 0,
+                duration: Phaser.Math.Between(1000, 2000),
+                ease: 'Cubic.easeIn',
+                onComplete: () => confetti.destroy()
             });
         }
     }
