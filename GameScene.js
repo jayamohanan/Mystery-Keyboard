@@ -21,6 +21,9 @@ class GameScene extends Phaser.Scene {
         // Load backspace image
         this.load.svg('backspace', 'graphics/backspace.svg', { scale: 1 });
         
+        // Load restart button image
+        this.load.image('undo', 'graphics/undo.png');
+        
         // Load sound effects
         this.load.audio('click', 'sounds/click.wav');
         this.load.audio('success', 'sounds/success.wav');
@@ -106,7 +109,7 @@ class GameScene extends Phaser.Scene {
         this.add.text(width / 2, yPos + height / 2, 
             'Type POKI', {
             fontFamily: 'Arial, sans-serif',
-            fontSize: '20px',
+            fontSize: '28px',
             color: CONFIG.KEY_TEXT_COLOR,
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -164,11 +167,15 @@ class GameScene extends Phaser.Scene {
         const availableHeight = height - (rowSpacing * (totalRows + 1));
         const keyHeight = Math.min(CONFIG.KEY_HEIGHT, availableHeight / totalRows);
         
+        // Add horizontal padding to prevent clipping
+        const horizontalPadding = 15;
+        const availableWidth = width - (horizontalPadding * 2);
+        
         let currentY = rowSpacing;
         
         rows.forEach((row, rowIndex) => {
             const rowWidth = (CONFIG.KEY_WIDTH * row.length) + (CONFIG.KEY_SPACING * (row.length - 1));
-            let startX = (width - rowWidth) / 2;
+            let startX = (availableWidth - rowWidth) / 2 + horizontalPadding;
             
             row.forEach((letter, colIndex) => {
                 const x = startX + (CONFIG.KEY_WIDTH + CONFIG.KEY_SPACING) * colIndex;
@@ -183,7 +190,7 @@ class GameScene extends Phaser.Scene {
             if (rowIndex === rows.length - 1) {
                 // Position backspace to the right of M, below L
                 const lastRowWidth = (CONFIG.KEY_WIDTH * row.length) + (CONFIG.KEY_SPACING * (row.length - 1));
-                const backspaceX = (width - lastRowWidth) / 2 + (CONFIG.KEY_WIDTH + CONFIG.KEY_SPACING) * row.length;
+                const backspaceX = (availableWidth - lastRowWidth) / 2 + horizontalPadding + (CONFIG.KEY_WIDTH + CONFIG.KEY_SPACING) * row.length;
                 const backspaceY = currentY - keyHeight - rowSpacing;
                 
                 const backspaceKey = this.createBackspaceKey(backspaceX, backspaceY, CONFIG.KEY_WIDTH, keyHeight);
@@ -311,30 +318,35 @@ class GameScene extends Phaser.Scene {
     }
 
     createRestartButton(width, keyboardYPos) {
-        const btnSize = 50; // Square button
+        const btnSize = 75; // Increased by 50% from 50 to 75
         const x = width - btnSize - 20;
         const y = keyboardYPos - btnSize - 15; // Above keyboard
         
-        const bg = this.add.rectangle(x, y, btnSize, btnSize, 
-            Phaser.Display.Color.HexStringToColor('#FF6B6B').color);
-        bg.setStrokeStyle(2, 0x333333);
-        bg.setOrigin(0, 0);
-        bg.setInteractive({ useHandCursor: true });
+        // Create rounded rectangle border
+        const border = this.add.graphics();
+        border.lineStyle(3, 0x333333, 1);
+        border.strokeRoundedRect(x, y, btnSize, btnSize, 4);
         
-        const text = this.add.text(x + btnSize / 2, y + btnSize / 2, '↻', {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '28px',
-            color: '#FFFFFF',
-            fontStyle: 'bold'
-        }).setOrigin(0.5);
+        // Create undo icon without background
+        const icon = this.add.image(x + btnSize / 2, y + btnSize / 2, 'undo');
+        icon.setDisplaySize(btnSize * 0.7, btnSize * 0.7);
+        icon.setInteractive({ useHandCursor: true });
         
-        bg.on('pointerdown', () => this.restartLevel());
+        // Click handler
+        icon.on('pointerdown', () => this.restartLevel());
         
-        bg.on('pointerover', () => {
-            bg.setFillStyle(0xE53935);
+        // Hover effect - scale up slightly and redraw border
+        icon.on('pointerover', () => {
+            icon.setScale(1.1);
+            border.clear();
+            border.lineStyle(3, Phaser.Display.Color.HexStringToColor(CONFIG.PRIMARY_COLOR).color, 1);
+            border.strokeRoundedRect(x, y, btnSize, btnSize, 4);
         });
-        bg.on('pointerout', () => {
-            bg.setFillStyle(Phaser.Display.Color.HexStringToColor('#FF6B6B').color);
+        icon.on('pointerout', () => {
+            icon.setScale(1.0);
+            border.clear();
+            border.lineStyle(3, 0x333333, 1);
+            border.strokeRoundedRect(x, y, btnSize, btnSize, 4);
         });
     }
 

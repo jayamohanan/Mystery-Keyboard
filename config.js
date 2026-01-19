@@ -22,14 +22,14 @@ var CONFIG = {
     PRIMARY_COLOR: '#4a90e2',
     
     // Dimensions
-    KEY_WIDTH: 60,
-    KEY_HEIGHT: 60,
-    KEY_SPACING: 10,
+    KEY_WIDTH: 70,
+    KEY_HEIGHT: 70,
+    KEY_SPACING: 6,
     CELL_SIZE: 80,
     CELL_SPACING: 15,
     
     // Font sizes
-    KEY_FONT_SIZE: '24px',
+    KEY_FONT_SIZE: '32px',
     CELL_FONT_SIZE: '48px',
     HEADER_FONT_SIZE: '32px',
     INSTRUCTION_FONT_SIZE: '18px',
