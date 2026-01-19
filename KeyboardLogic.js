@@ -63,36 +63,29 @@ class NormalKeyboard extends BaseKeyboardLogic {
 }
 
 /**
- * Level 2: Alternate key deactivation
- * Every other key press deactivates that key
+ * Level 2: Alternate key press ignored
+ * Every other key press is ignored (but keys stay active)
  */
 class AlternateDeactivation extends BaseKeyboardLogic {
     reset() {
         this.pressCount = 0;
-        this.deactivatedKeys = new Set();
     }
     
     handleKeyPress(key, currentInput) {
         this.pressCount++;
         
-        // Check if key is deactivated
-        if (this.deactivatedKeys.has(key)) {
-            return { letter: null, shouldAdd: false, feedback: 'Key disabled' };
-        }
-        
         // Odd presses add the letter
         if (this.pressCount % 2 === 1) {
             return { letter: key, shouldAdd: true, feedback: '' };
         } else {
-            // Even presses deactivate the key
-            this.deactivatedKeys.add(key);
-            return { letter: null, shouldAdd: false, feedback: 'Key disabled' };
+            // Even presses are ignored (no letter added, but key stays active)
+            return { letter: null, shouldAdd: false, feedback: '' };
         }
     }
     
     getKeyState(key) {
-        const enabled = !this.deactivatedKeys.has(key);
-        return { visible: true, enabled: enabled };
+        // All keys always remain visible and enabled
+        return { visible: true, enabled: true };
     }
 }
 
