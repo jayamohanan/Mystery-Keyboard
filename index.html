@@ -3,10 +3,10 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 	<link rel="icon" type="image/png" href="/favicon.png">
 
-	<title>EMOJI INPUT</title>
+	<title>Mystery Keyboard - POKI Game</title>
 	<style>
 		* {
 			margin: 0;
@@ -17,8 +17,6 @@
 			width: 100%;
 			height: 100%;
 			overflow: hidden;
-			/* Outer gradient for flanks outside portrait area */
-			/* background: linear-gradient(to bottom, #b0dbe8, #acc4f5); */
 			background: linear-gradient(to bottom, #d3e8eeff, #ABE0F0);
 		}
 		#game-container {
@@ -34,7 +32,9 @@
 	<div id="game-container"></div>
 	<script src="phaser.min.js"></script>
 	<script src="config.js"></script>
+	<script src="KeyboardLogic.js"></script>
+	<script src="GameScene.js"></script>
 	<script src="WinScene.js"></script>
-	<script type="module" src="game.js"></script>
+	<script src="game.js"></script>
 </body>
 </html>

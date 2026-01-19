@@ -80,8 +80,8 @@ class WinScene extends Phaser.Scene {
         // Next button click - go to next level
         nextButton.on('pointerdown', () => {
             const nextLevel = (this.currentLevelIndex + 1) % this.totalLevels;
-            this.scene.start('LetterSpellingGame', {
-                currentLevelIndex: nextLevel
+            this.scene.start('GameScene', {
+                levelIndex: nextLevel
             });
         });
 

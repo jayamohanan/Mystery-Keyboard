@@ -1,3 +1,87 @@
 {
- 
+    "levels": [
+        {
+            "id": 1,
+            "name": "Level 1: Normal",
+            "instruction": "Type POKI using the keyboard",
+            "keyboardType": "qwerty",
+            "logic": "normal",
+            "hint": "Just type normally!"
+        },
+        {
+            "id": 2,
+            "name": "Level 2: Alternate",
+            "instruction": "Every other key press deactivates the key...",
+            "keyboardType": "qwerty",
+            "logic": "alternateDeactivation",
+            "hint": "Type P-Q-O-E-K-F-I (alternate keys deactivate)"
+        },
+        {
+            "id": 3,
+            "name": "Level 3: Double Press",
+            "instruction": "Press each key twice in a row",
+            "keyboardType": "qwerty",
+            "logic": "doublePressRequired",
+            "hint": "Type P-P-O-O-K-K-I-I"
+        },
+        {
+            "id": 4,
+            "name": "Level 4: Next Letter",
+            "instruction": "Each key types the next letter in alphabet",
+            "keyboardType": "qwerty",
+            "logic": "nextLetter",
+            "hint": "Press O-N-J-H to get POKI"
+        },
+        
+        {
+            "id": 6,
+            "name": "Level 6: Vowels Twice",
+            "instruction": "Vowels need two presses, consonants one",
+            "keyboardType": "qwerty",
+            "logic": "vowelsTwice",
+            "hint": "Type P-O-O-K-I-I"
+        },
+        {
+            "id": 7,
+            "name": "Level 7: Toggle Visibility",
+            "instruction": "Keyboard appears and disappears!",
+            "keyboardType": "qwerty",
+            "logic": "toggleVisibility",
+            "hint": "Remember where keys are when hidden"
+        },
+        {
+            "id": 8,
+            "name": "Level 8: Icon First Letter",
+            "instruction": "Click icons - first letter is typed",
+            "keyboardType": "icons",
+            "logic": "iconKeyboardFirst",
+            "icons": ["ladder", "penguin", "clock", "octopus", "kite", "carrot", "icecream", "cactus", "violin"],
+            "hint": "Find icons starting with P, O, K, I"
+        },
+        {
+            "id": 9,
+            "name": "Level 9: Reverse Order",
+            "instruction": "Letters fill from right to left!",
+            "keyboardType": "qwerty",
+            "logic": "reverseOrder",
+            "hint": "Type I-K-O-P"
+        },
+        {
+            "id": 10,
+            "name": "Level 10: Icon Second Letter",
+            "instruction": "Click icons - second letter is typed",
+            "keyboardType": "icons",
+            "logic": "iconKeyboardSecond",
+            "icons": ["skull", "spider", "socks", "mirror", "umbrella", "octopus", "kite", "battery", "giraffe"],
+            "hint": "Find icons with P, O, K, I as second letter"
+        },
+        {
+            "id": 5,
+            "name": "Level 5: Invisible",
+            "instruction": "The keyboard is invisible. Find the keys!",
+            "keyboardType": "qwerty",
+            "logic": "invisible",
+            "hint": "Remember QWERTY layout"
+        }
+    ]
 }
