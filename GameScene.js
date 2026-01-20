@@ -125,10 +125,16 @@ class GameScene extends Phaser.Scene {
         for (let i = 0; i < this.targetWord.length; i++) {
             const x = startX + (CONFIG.CELL_SIZE + CONFIG.CELL_SPACING) * i;
             
-            // Cell background
-            const cell = this.add.rectangle(x, centerY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, 
-                Phaser.Display.Color.HexStringToColor(CONFIG.CELL_COLOR).color);
-            cell.setStrokeStyle(3, Phaser.Display.Color.HexStringToColor(CONFIG.CELL_STROKE_COLOR).color);
+            // Cell background with rounded corners
+            const cellGraphics = this.add.graphics();
+            const radius = 8;
+            cellGraphics.fillStyle(Phaser.Display.Color.HexStringToColor(CONFIG.CELL_COLOR).color, 1);
+            cellGraphics.fillRoundedRect(x, centerY - CONFIG.CELL_SIZE / 2, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, radius);
+            cellGraphics.lineStyle(3, Phaser.Display.Color.HexStringToColor(CONFIG.CELL_STROKE_COLOR).color, 1);
+            cellGraphics.strokeRoundedRect(x, centerY - CONFIG.CELL_SIZE / 2, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, radius);
+            
+            // Invisible rectangle for reference
+            const cell = this.add.rectangle(x, centerY, CONFIG.CELL_SIZE, CONFIG.CELL_SIZE, 0xffffff, 0);
             cell.setOrigin(0, 0.5);
             
             // Cell text
@@ -139,7 +145,7 @@ class GameScene extends Phaser.Scene {
                 fontStyle: 'bold'
             }).setOrigin(0.5);
             
-            this.inputCells.push({ cell, text, defaultColor: CONFIG.CELL_COLOR });
+            this.inputCells.push({ cell, text, graphics: cellGraphics, defaultColor: CONFIG.CELL_COLOR });
         }
         
         // Highlight first cell
@@ -181,7 +187,7 @@ class GameScene extends Phaser.Scene {
                 const x = startX + (CONFIG.KEY_WIDTH + CONFIG.KEY_SPACING) * colIndex;
                 const key = this.createKey(letter, x, currentY, CONFIG.KEY_WIDTH, keyHeight);
                 this.keys[letter] = key;
-                this.keyboardContainer.add([key.bg, key.text]);
+                this.keyboardContainer.add([key.graphics, key.bg, key.text]);
             });
             
             currentY += keyHeight + rowSpacing;
@@ -225,36 +231,60 @@ class GameScene extends Phaser.Scene {
     }
 
     createKey(letter, x, y, width, height) {
-        // Background
-        const bg = this.add.rectangle(x, y, width, height, 
-            Phaser.Display.Color.HexStringToColor(CONFIG.KEY_COLOR).color);
-        bg.setStrokeStyle(2, 0x999999);
+        // Create graphics for rounded key with gradient effect
+        const keyGraphics = this.add.graphics();
+        
+        // Draw rounded rectangle with gradient (white top 40%, grey bottom 60%)
+        const radius = 6;
+        const topHeight = height * 0.4;
+        const bottomHeight = height * 0.6;
+        
+        // Top part (white)
+        keyGraphics.fillStyle(0xffffff, 1);
+        keyGraphics.fillRoundedRect(x, y, width, topHeight + radius, { tl: radius, tr: radius, bl: 0, br: 0 });
+        
+        // Bottom part (light grey)
+        keyGraphics.fillStyle(0xe8e8e8, 1);
+        keyGraphics.fillRoundedRect(x, y + topHeight, width, bottomHeight, { tl: 0, tr: 0, bl: radius, br: radius });
+        
+        // Border
+        keyGraphics.lineStyle(2, 0x999999, 1);
+        keyGraphics.strokeRoundedRect(x, y, width, height, radius);
+        
+        // Create invisible interactive rectangle for click detection
+        const bg = this.add.rectangle(x, y, width, height, 0xffffff, 0);
         bg.setOrigin(0, 0);
         bg.setInteractive({ useHandCursor: true });
         
-        // Text
+        // Store key data for later use in updateKeyAppearance
+        bg.setData('keyData', { x, y, width, height });
+        
+        // Text (removed bold)
         const text = this.add.text(x + width / 2, y + height / 2, letter, {
             fontFamily: 'Arial, sans-serif',
             fontSize: CONFIG.KEY_FONT_SIZE,
-            color: CONFIG.KEY_TEXT_COLOR,
-            fontStyle: 'bold'
+            color: CONFIG.KEY_TEXT_COLOR
         }).setOrigin(0.5);
         
         // Click handler
         bg.on('pointerdown', () => this.handleKeyPress(letter));
         
-        // Hover effect
+        // Hover effect - redraw with lighter color
         bg.on('pointerover', () => {
             const state = this.keyboardLogic.getKeyState(letter);
             if (state.enabled) {
-                bg.setFillStyle(Phaser.Display.Color.HexStringToColor(CONFIG.KEY_HOVER_COLOR).color);
+                keyGraphics.clear();
+                keyGraphics.fillStyle(0xe3f2fd, 1);
+                keyGraphics.fillRoundedRect(x, y, width, height, radius);
+                keyGraphics.lineStyle(2, 0x999999, 1);
+                keyGraphics.strokeRoundedRect(x, y, width, height, radius);
             }
         });
         bg.on('pointerout', () => {
             this.updateKeyAppearance(letter);
         });
         
-        return { bg, text, letter };
+        return { bg, text, letter, graphics: keyGraphics };
     }
 
     createIconKey(iconName, x, y, size) {
@@ -458,6 +488,7 @@ class GameScene extends Phaser.Scene {
             // Make invisible by setting alpha to 0, but keep elements present
             key.bg.setAlpha(0);
             if (key.text) key.text.setAlpha(0);
+            if (key.graphics) key.graphics.setAlpha(0);
             if (key.icon) key.icon.setAlpha(0);
             // Keep interactive so it can still be clicked
             if (state.enabled) {
@@ -467,16 +498,40 @@ class GameScene extends Phaser.Scene {
             // Normal visibility
             key.bg.setAlpha(1);
             if (key.text) key.text.setAlpha(1);
+            if (key.graphics) key.graphics.setAlpha(1);
             if (key.icon) key.icon.setAlpha(1);
         }
         
-        // Update enabled state (color)
-        if (state.enabled) {
-            key.bg.setFillStyle(Phaser.Display.Color.HexStringToColor(CONFIG.KEY_COLOR).color);
-            key.bg.setInteractive({ useHandCursor: true });
-        } else {
-            key.bg.setFillStyle(Phaser.Display.Color.HexStringToColor(CONFIG.KEY_DISABLED_COLOR).color);
-            key.bg.disableInteractive();
+        // Update enabled state - redraw graphics with appropriate color
+        if (key.graphics) {
+            const keyData = key.bg.getData('keyData') || {};
+            const { x, y, width, height } = keyData;
+            const radius = 6;
+            
+            key.graphics.clear();
+            
+            if (state.enabled) {
+                // Draw gradient effect (white top 40%, grey bottom 60%)
+                const topHeight = height * 0.4;
+                const bottomHeight = height * 0.6;
+                
+                key.graphics.fillStyle(0xffffff, 1);
+                key.graphics.fillRoundedRect(x, y, width, topHeight + radius, { tl: radius, tr: radius, bl: 0, br: 0 });
+                
+                key.graphics.fillStyle(0xe8e8e8, 1);
+                key.graphics.fillRoundedRect(x, y + topHeight, width, bottomHeight, { tl: 0, tr: 0, bl: radius, br: radius });
+                
+                key.bg.setInteractive({ useHandCursor: true });
+            } else {
+                // Disabled - solid grey
+                key.graphics.fillStyle(Phaser.Display.Color.HexStringToColor(CONFIG.KEY_DISABLED_COLOR).color, 1);
+                key.graphics.fillRoundedRect(x, y, width, height, radius);
+                key.bg.disableInteractive();
+            }
+            
+            // Border
+            key.graphics.lineStyle(2, 0x999999, 1);
+            key.graphics.strokeRoundedRect(x, y, width, height, radius);
         }
     }
 
@@ -484,8 +539,18 @@ class GameScene extends Phaser.Scene {
         const keyObj = this.keys[key];
         if (!keyObj) return;
         
-        // Brief color change
-        keyObj.bg.setFillStyle(0xcccccc);
+        // Brief color change with graphics
+        if (keyObj.graphics) {
+            const keyData = keyObj.bg.getData('keyData') || {};
+            const { x, y, width, height } = keyData;
+            const radius = 6;
+            
+            keyObj.graphics.clear();
+            keyObj.graphics.fillStyle(0xcccccc, 1);
+            keyObj.graphics.fillRoundedRect(x, y, width, height, radius);
+            keyObj.graphics.lineStyle(2, 0x999999, 1);
+            keyObj.graphics.strokeRoundedRect(x, y, width, height, radius);
+        }
         
         this.time.delayedCall(100, () => {
             this.updateKeyAppearance(key);
