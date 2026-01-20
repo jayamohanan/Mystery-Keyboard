@@ -22,7 +22,7 @@ var CONFIG = {
     PRIMARY_COLOR: '#4a90e2',
     
     // Dimensions
-    KEY_WIDTH: 70,
+    KEY_WIDTH: 64,
     KEY_HEIGHT: 70,
     KEY_SPACING: 6,
     CELL_SIZE: 80,

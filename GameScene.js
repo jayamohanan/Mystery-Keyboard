@@ -66,12 +66,12 @@ class GameScene extends Phaser.Scene {
         // Congratulatory messages array
         this.congratsMessages = ['Perfect!', 'Great!', 'Nice!', 'Master!', 'Excellent!', 'Nailed it!'];
         
-        // Calculate layout - keyboard positioned lower like Wordle
+        // Calculate layout - keyboard positioned at bottom for mobile
         const headerHeight = height * 0.08;
         const typePokiHeight = height * 0.05;
         const inputHeight = height * 0.12;
-        const spacingHeight = height * 0.20; // Space between input and keyboard
-        const keyboardHeight = height * 0.40;
+        const keyboardHeight = height * 0.45; // Keyboard height
+        const spacingHeight = height - headerHeight - typePokiHeight - inputHeight - keyboardHeight - (height * 0.02); // Remaining space with small bottom margin
         
         let currentY = 0;
         
@@ -168,7 +168,7 @@ class GameScene extends Phaser.Scene {
         const keyHeight = Math.min(CONFIG.KEY_HEIGHT, availableHeight / totalRows);
         
         // Add horizontal padding to prevent clipping
-        const horizontalPadding = 15;
+        const horizontalPadding = 30;
         const availableWidth = width - (horizontalPadding * 2);
         
         let currentY = rowSpacing;
