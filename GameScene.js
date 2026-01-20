@@ -66,12 +66,13 @@ class GameScene extends Phaser.Scene {
         // Congratulatory messages array
         this.congratsMessages = ['Perfect!', 'Great!', 'Nice!', 'Master!', 'Excellent!', 'Nailed it!'];
         
-        // Calculate layout - keyboard positioned at bottom for mobile
+        // Calculate layout - keyboard at bottom, cells above center
         const headerHeight = height * 0.08;
-        const typePokiHeight = height * 0.05;
+        const typePokiHeight = height * 0.03; // Reduced height for closer spacing
         const inputHeight = height * 0.12;
         const keyboardHeight = height * 0.45; // Keyboard height
-        const spacingHeight = height - headerHeight - typePokiHeight - inputHeight - keyboardHeight - (height * 0.02); // Remaining space with small bottom margin
+        // Position cells above center - calculate remaining space
+        const spacingHeight = height - headerHeight - typePokiHeight - inputHeight - keyboardHeight;
         
         let currentY = 0;
         
@@ -106,10 +107,10 @@ class GameScene extends Phaser.Scene {
     }
 
     createTypePokiText(width, height, yPos) {
-        this.add.text(width / 2, yPos + height / 2, 
+        this.add.text(width / 2, yPos + height, 
             'Type POKI', {
             fontFamily: 'Arial, sans-serif',
-            fontSize: '28px',
+            fontSize: '24px',
             color: CONFIG.KEY_TEXT_COLOR,
             fontStyle: 'bold'
         }).setOrigin(0.5);
@@ -328,9 +329,12 @@ class GameScene extends Phaser.Scene {
         bg.setOrigin(0, 0);
         bg.setInteractive({ useHandCursor: true });
         
-        // Backspace icon - maintain aspect ratio
+        // Backspace icon - maintain aspect ratio, use more space
         const icon = this.add.image(x + width / 2, y + height / 2, 'backspace');
-        const scale = Math.min((width * 0.6) / icon.width, (height * 0.6) / icon.height);
+        // Use 70% of the available space and maintain aspect ratio
+        const targetWidth = width * 0.7;
+        const targetHeight = height * 0.7;
+        const scale = Math.min(targetWidth / icon.width, targetHeight / icon.height);
         icon.setScale(scale);
         
         // Click handler
@@ -444,15 +448,38 @@ class GameScene extends Phaser.Scene {
     }
 
     highlightNextCell() {
-        // Reset all cells to default color
-        this.inputCells.forEach(cellObj => {
-            cellObj.cell.setFillStyle(Phaser.Display.Color.HexStringToColor(cellObj.defaultColor).color);
-        });
+        // Remove any existing cursor
+        if (this.cursor) {
+            this.cursor.destroy();
+            this.cursor = null;
+        }
         
-        // Highlight next empty cell in yellow
+        // Add vertical cursor line in next empty cell
         const nextIndex = this.currentInput.length;
         if (nextIndex < this.inputCells.length) {
-            this.inputCells[nextIndex].cell.setFillStyle(0xFFEB3B); // Yellow
+            const cellObj = this.inputCells[nextIndex];
+            const cellX = cellObj.cell.x;
+            const cellY = cellObj.cell.y;
+            
+            // Create blinking vertical cursor line
+            const cursorHeight = CONFIG.CELL_SIZE * 0.6;
+            const cursorWidth = 3;
+            this.cursor = this.add.rectangle(
+                cellX + 15, // Slight offset from left
+                cellY,
+                cursorWidth,
+                cursorHeight,
+                0x4a90e2 // Blue cursor
+            );
+            
+            // Make cursor blink
+            this.tweens.add({
+                targets: this.cursor,
+                alpha: 0,
+                duration: 500,
+                yoyo: true,
+                repeat: -1
+            });
         }
     }
 
